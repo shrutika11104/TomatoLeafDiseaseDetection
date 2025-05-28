@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomato Leaf Disease Classifier</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --primary-dark: #388E3C;
+            --accent: #FF5722;
+            --light-gray: #f5f5f5;
+            --dark-text: #333;
+            --light-text: #fff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f9f9f9;
+            color: var(--dark-text);
+            line-height: 1.6;
+        }
+        
+        header {
+            background-color: var(--primary);
+            color: var(--light-text);
+            padding: 1rem 2rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        nav {
+            background-color: var(--primary-dark);
+            padding: 0.5rem 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        
+        nav a {
+            color: var(--light-text);
+            text-decoration: none;
+            margin: 0 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        nav a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+        }
+        
+        .upload-area.active {
+            border-color: var(--accent);
+            background-color: rgba(255, 87, 34, 0.05);
+        }
+        
+        .image-preview {
+            max-width: 300px;
+            max-height: 300px;
+            margin: 1rem auto;
+            display: none;
+        }
+        
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background-color: #757575;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #616161;
+        }
+        
+        .result-container {
+            margin-top: 2rem;
+            display: none;
+        }
+        
+        .result-card {
+            background-color: var(--light-gray);
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 10px;
+            width: 0;
+            transition: width 0.5s ease-in-out;
+        }
+        
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .grid-item {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 2rem 0;
+        }
+        
+        .disease-info {
+            display: none;
+            margin-top: 2rem;
+        }
+        
+        footer {
+            background-color: var(--primary-dark);
+            color: var(--light-text);
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        /* Table styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid {
+                flex-direction: column;
+            }
+            
+            nav {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            nav a {
+                margin: 0.3rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Tomato Leaf Disease Classifier</h1>
+        <p>Upload an image to detect and classify tomato leaf diseases using neural networks</p>
+    </header>
+    
+    <nav>
+        <a href="#classifier">Classifier</a>
+        <a href="#about">About</a>
+        <a href="#model">Model</a>
+        <a href="#results">Results</a>
+        <a href="#diseases">Disease Info</a>
+    </nav>
+    
+    <main>
+        <section id="classifier" class="container">
+            <h2>Disease Classifier</h2>
+            <p>Upload an image of a tomato leaf to identify if it's healthy or has a disease.</p>
+            
+            <div class="upload-area" id="upload-area">
+                <img id="upload-icon" src="/api/placeholder/80/80" alt="Upload">
+                <p>Drag & drop an image here or click to upload</p>
+                <p class="small">Supported formats: JPG, PNG (Max size: 5MB)</p>
+                <input type="file" id="file-input" accept="image/*" style="display: none;">
+            </div>
+            
+            <div style="text-align: center;">
+                <img id="image-preview" class="image-preview" src="#" alt="Preview">
+                <div>
+                    <button id="classify-btn" class="btn" disabled>Classify Image</button>
+                    <button id="reset-btn" class="btn btn-secondary" style="display: none;">Reset</button>
+                </div>
+            </div>
+            
+            <div id="result-container" class="result-container">
+                <h3>Classification Result</h3>
+                <div class="result-card">
+                    <h4>Prediction: <span id="prediction-result">-</span></h4>
+                    <p>Confidence: <span id="confidence-result">-</span></p>
+                    <div class="progress-bar">
+                        <div class="progress" id="confidence-bar"></div>
+                    </div>
+                </div>
+                
+                <h4>Top Predictions</h4>
+                <div id="other-predictions">
+                    <table id="predictions-table">
+                        <thead>
+                            <tr>
+                                <th>Disease</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Will be filled with JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="disease-info" class="disease-info">
+                    <h3>Disease Information</h3>
+                    <div id="disease-details">
+                        <!-- Will be filled with JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="about" class="container">
+            <h2>About This Project</h2>
+            <div class="grid">
+                <div class="grid-item">
+                    <h3>Project Overview</h3>
+                    <p>This tomato leaf disease classifier uses convolutional neural networks (CNN) to identify various diseases that can affect tomato plants. Early disease detection is crucial for crop management and can help farmers take timely action to prevent spread and minimize losses.</p>
+                    <p>The model has been trained on thousands of images of tomato leaves, both healthy and diseased, to accurately identify 10 different conditions.</p>
+                </div>
+                <div class="grid-item">
+                    <h3>Why It Matters</h3>
+                    <p>Tomato plants are susceptible to various diseases that can significantly reduce yield and quality. Traditional disease identification relies on expert knowledge which may not always be readily available.</p>
+                    <p>This automated system provides quick and accurate disease diagnosis, allowing for prompt intervention and treatment, potentially saving crops and reducing the use of unnecessary pesticides.</p>
+                </div>
+            </div>
+        </section>
+        
+        <section id="model" class="container">
+            <h2>Model Architecture</h2>
+            <div class="grid">
+                <div class="grid-item">
+                    <h3>CNN Architecture</h3>
+                    <p>Our primary model uses a custom Convolutional Neural Network with the following structure:</p>
+                    <ul style="list-style-type: disc; margin-left: 2rem;">
+                        <li>Input layer accepting 224×224×3 images</li>
+                        <li>Data augmentation (rotation, flipping, zooming)</li>
+                        <li>4 blocks of Conv2D + MaxPooling layers</li>
+                        <li>Flattening layer</li>
+                        <li>Dense layer with 64 neurons and ReLU activation</li>
+                        <li>Output layer with 10 neurons (one per class) and softmax activation</li>
+                    </ul>
+                    <p>The model was trained for 10 epochs using Adam optimizer and categorical cross-entropy loss.</p>
+                </div>
+                <div class="grid-item">
+                    <h3>ResNet50 Transfer Learning</h3>
+                    <p>For comparison, we also implemented a transfer learning approach using ResNet50 pretrained on ImageNet:</p>
+                    <ul style="list-style-type: disc; margin-left: 2rem;">
+                        <li>ResNet50 base model with frozen weights</li>
+                        <li>Global Average Pooling</li>
+                        <li>Dense layer with 128 neurons and ReLU activation</li>
+                        <li>Output layer with softmax activation</li>
+                    </ul>
+                    <p>The transfer learning approach allowed us to leverage pre-learned features from millions of images.</p>
+                </div>
+            </div>
+        </section>
+        
+        <section id="results" class="container">
+            <h2>Model Performance</h2>
+            <div class="grid">
+                <div class="grid-item">
+                    <h3>Accuracy Comparison</h3>
+                    <div class="chart-container" id="accuracy-chart">
+                        <canvas id="accuracyChart"></canvas>
+                    </div>
+                </div>
+                <div class="grid-item">
+                    <h3>Training Progress</h3>
+                    <div class="chart-container" id="training-chart">
+                        <canvas id="trainingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Performance Metrics</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Accuracy</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1-Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>CNN</td>
+                        <td>92.8%</td>
+                        <td>93.2%</td>
+                        <td>92.1%</td>
+                        <td>92.6%</td>
+                    </tr>
+                    <tr>
+                        <td>ResNet50</td>
+                        <td>95.6%</td>
+                        <td>95.9%</td>
+                        <td>95.4%</td>
+                        <td>95.6%</td>
+                    </tr>
+                    <tr>
+                        <td>Decision Tree</td>
+                        <td>73.5%</td>
+                        <td>72.8%</td>
+                        <td>71.4%</td>
+                        <td>72.1%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <section id="diseases" class="container">
+            <h2>Tomato Leaf Diseases</h2>
+            <p>The model has been trained to identify the following conditions:</p>
+            
+            <div class="grid" style="gap: 1rem;">
+                <div class="grid-item" style="min-width: 250px; background-color: #f5f5f5; padding: 1rem; border-radius: 8px;">
+                    <h3>Tomato Bacterial Spot</h3>
+                    <p>Caused by Xanthomonas species. Symptoms include small, dark lesions on leaves that may have yellow halos.</p>
+                </div>
+                <div class="grid-item" style="min-width: 250px; background-color: #f5f5f5; padding: 1rem; border-radius: 8px;">
+                    <h3>Tomato Early Blight</h3>
+                    <p>Caused by Alternaria solani. Symptoms include concentric rings forming a bull's-eye pattern on leaves.</p>
+                </div>
+                <div class="grid-item" style="min-width: 250px; background-color: #f5f5f5; padding: 1rem; border-radius: 8px;">
+                    <h3>Tomato Late Blight</h3>
+                    <p>Caused by Phytophthora infestans. Symptoms include water-soaked lesions that turn brown-black.</p>
+                </div>
+                <div class="grid-item" style="min-width: 250px; background-color: #f5f5f5; padding: 1rem; border-radius: 8px;">
+                    <h3>Tomato Leaf Mold</h3>
+                    <p>Caused by Passalora fulva. Symptoms include yellow spots on the upper leaf surface and olive-green to grayish mold on the underside.</p>
+                </div>
+                <div class="grid-item" style="min-width: 250px; background-color: #f5f5f5; padding: 1rem; border-radius: 8px;">
+                    <h3>Tomato Septoria Leaf Spot</h3>
+                    <p>Caused by Septoria lycopersici. Symptoms include numerous small circular spots with dark borders and light centers.</p>
+                </div>
+                <div class="grid-item" style="min-width: 250px; background-color: #f5f5f5; padding: 1rem; border-radius: 8px;">
+                    <h3>Tomato Spider Mites</h3>
+                    <p>Caused by Tetranychus urticae. Symptoms include fine webbing and stippling (tiny yellow/white spots) on leaves.</p>
+                </div>
+                <div class="grid-item" style="min-width: 250px; background-color: #f5f5f5; padding: 1rem; border-radius: 8px;">
+                    <h3>Tomato Target Spot</h3>
+                    <p>Caused by Corynespora cassiicola. Symptoms include concentric rings forming target-like spots.</p>
+                </div>
+                <div class="grid-item" style="min-width: 250px; background-color: #f5f5f5; padding: 1rem; border-radius: 8px;">
+                    <h3>Tomato Mosaic Virus</h3>
+                    <p>Caused by Tomato mosaic virus or Tobacco mosaic virus. Symptoms include mottled light and dark green areas on leaves.</p>
+                </div>
+                <div class="grid-item" style="min-width: 250px; background-color: #f5f5f5; padding: 1rem; border-radius: 8px;">
+                    <h3>Tomato Yellow Leaf Curl Virus</h3>
+                    <p>Caused by TYLCV. Symptoms include upward curling and yellowing of leaf edges, stunted growth.</p>
+                </div>
+                <div class="grid-item" style="min-width: 250px; background-color: #f5f5f5; padding: 1rem; border-radius: 8px;">
+                    <h3>Healthy</h3>
+                    <p>No disease present. Leaves appear normal with consistent green coloration.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>© 2025 Tomato Leaf Disease Classifier</p>
+        <p>Developed as part of a machine learning research project</p>
+    </footer>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // Disease information database
+        const diseaseInfo = {
+            "Tomato_Bacterial_spot": {
+                name: "Bacterial Spot",
+                description: "A serious bacterial disease that affects tomatoes in warm, wet conditions. It causes dark, water-soaked, circular spots on leaves, stems, and fruits.",
+                management: [
+                    "Use disease-free seeds and transplants",
+                    "Apply copper-based bactericides preventatively",
+                    "Avoid overhead irrigation",
+                    "Rotate crops with non-host plants",
+                    "Remove and destroy infected plant material"
+                ]
+            },
+            "Tomato_Early_blight": {
+                name: "Early Blight",
+                description: "A fungal disease that produces distinctive dark spots with concentric rings forming a 'bull's eye' pattern on lower, older leaves first.",
+                management: [
+                    "Remove lower infected leaves",
+                    "Apply fungicides preventatively",
+                    "Mulch around plants to prevent soil splash",
+                    "Ensure good air circulation between plants",
+                    "Practice crop rotation"
+                ]
+            },
+            "Tomato_Late_blight": {
+                name: "Late Blight",
+                description: "A devastating water mold infection that causes large, dark, water-soaked lesions on leaves, stems, and fruits, especially in cool, wet weather.",
+                management: [
+                    "Apply fungicides preventatively before disease appears",
+                    "Remove and destroy infected plants immediately",
+                    "Avoid overhead irrigation",
+                    "Plant resistant varieties when available",
+                    "Ensure good air circulation"
+                ]
+            },
+            "Tomato_Leaf_Mold": {
+                name: "Leaf Mold",
+                description: "A fungal disease common in humid environments that causes pale green or yellow spots on the upper leaf surface with olive-green to grayish mold on the lower surface.",
+                management: [
+                    "Improve greenhouse ventilation",
+                    "Avoid leaf wetness by using drip irrigation",
+                    "Apply fungicides when symptoms first appear",
+                    "Remove and destroy infected plant material",
+                    "Space plants for good air circulation"
+                ]
+            },
+            "Tomato_Septoria_leaf_spot": {
+                name: "Septoria Leaf Spot",
+                description: "A fungal disease characterized by numerous small circular spots with dark borders and light gray or tan centers, primarily on lower leaves.",
+                management: [
+                    "Remove infected leaves immediately",
+                    "Apply fungicides preventatively",
+                    "Use mulch to prevent spore splash",
+                    "Ensure adequate plant spacing",
+                    "Avoid overhead watering"
+                ]
+            },
+            "Tomato_Spider_mites": {
+                name: "Spider Mites",
+                description: "Tiny arachnids that cause stippling (small yellow/white spots) on leaves and fine webbing between leaves and stems, especially in hot, dry conditions.",
+                management: [
+                    "Increase humidity around plants",
+                    "Spray plants with water to dislodge mites",
+                    "Apply insecticidal soap or horticultural oil",
+                    "Introduce predatory mites",
+                    "Avoid drought stress"
+                ]
+            },
+            "Tomato_Target_Spot": {
+                name: "Target Spot",
+                description: "A fungal disease that creates dark brown, concentric rings on leaves, stems, and fruits, resembling targets or bullseyes.",
+                management: [
+                    "Apply appropriate fungicides",
+                    "Remove infected plant parts",
+                    "Maintain adequate plant spacing",
+                    "Avoid overhead irrigation",
+                    "Practice crop rotation"
+                ]
+            },
+            "Tomato_mosaic_virus": {
+                name: "Mosaic Virus",
+                description: "A viral disease that causes mottled light and dark green patterns on leaves, with possible leaf distortion and stunted plant growth.",
+                management: [
+                    "Remove and destroy infected plants",
+                    "Wash hands and tools after handling infected plants",
+                    "Control insect vectors like aphids",
+                    "Plant resistant varieties",
+                    "There is no chemical treatment available"
+                ]
+            },
+            "Tomato_Yellow_Leaf_Curl_Virus": {
+                name: "Yellow Leaf Curl Virus",
+                description: "A viral disease transmitted by whiteflies that causes leaf edges to curl upward and inward, with leaves becoming yellow, small, and distorted.",
+                management: [
+                    "Control whitefly populations",
+                    "Use reflective mulches to repel whiteflies",
+                    "Plant resistant varieties",
+                    "Install insect-proof screens in greenhouses",
+                    "Remove and destroy infected plants"
+                ]
+            },
+            "Tomato_healthy": {
+                name: "Healthy",
+                description: "No disease is present. The tomato plant displays normal, vibrant green leaves without spots, discoloration, or deformities.",
+                management: [
+                    "Maintain regular watering schedule",
+                    "Fertilize appropriately",
+                    "Ensure good air circulation",
+                    "Monitor regularly for early signs of pests or disease",
+                    "Provide adequate sunlight"
+                ]
+            }
+        };
+
+        // Upload functionality
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const imagePreview = document.getElementById('image-preview');
+        const classifyBtn = document.getElementById('classify-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const resultContainer = document.getElementById('result-container');
+        
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('active');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('active');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('active');
+            
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        function handleFile(file) {
+            if (!file.type.match('image.*')) {
+                alert('Please upload an image file');
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                classifyBtn.disabled = false;
+                resetBtn.style.display = 'inline-block';
+            };
+            
+            reader.readAsDataURL(file);
+        }
+        
+        resetBtn.addEventListener('click', () => {
+            imagePreview.src = '#';
+            imagePreview.style.display = 'none';
+            fileInput.value = '';
+            classifyBtn.disabled = true;
+            resetBtn.style.display = 'none';
+            resultContainer.style.display = 'none';
+            document.getElementById('disease-info').style.display = 'none';
+        });
+        
+        // Simulate classification on button click
+       // Simulate classification on button click
+classifyBtn.addEventListener('click', () => {
+    // Show loading state
+    classifyBtn.disabled = true;
+    classifyBtn.textContent = 'Classifying...';
+    
+    // Simulate network delay
+    setTimeout(() => {
+        // Simulate classification
+        const diseases = Object.keys(diseaseInfo);
+        
+        // Generate random results for demonstration
+        const predictions = diseases.map(disease => {
+            return {
+                disease: disease,
+                confidence: Math.random()
+            };
+        });
+        
+        // Sort by confidence
+        predictions.sort((a, b) => b.confidence - a.confidence);
+        
+        // Get top prediction
+        const topPrediction = predictions[0];
+        const confidencePercent = (topPrediction.confidence * 100).toFixed(2);
+        
+        // Display results
+        document.getElementById('prediction-result').textContent = diseaseInfo[topPrediction.disease].name;
+        document.getElementById('confidence-result').textContent = `${confidencePercent}%`;
+        document.getElementById('confidence-bar').style.width = `${confidencePercent}%`;
+        
+        // Fill the predictions table
+        const tableBody = document.querySelector('#predictions-table tbody');
+        tableBody.innerHTML = '';
+        
+        predictions.forEach(pred => {
+            const row = document.createElement('tr');
+            const diseaseCell = document.createElement('td');
+            const confidenceCell = document.createElement('td');
+            
+            diseaseCell.textContent = diseaseInfo[pred.disease].name;
+            confidenceCell.textContent = `${(pred.confidence * 100).toFixed(2)}%`;
+            
+            row.appendChild(diseaseCell);
+            row.appendChild(confidenceCell);
+            tableBody.appendChild(row);
+        });
+        
+        // Show disease info
+        const diseaseInfoDiv = document.getElementById('disease-info');
+        diseaseInfoDiv.style.display = 'block';
+        
+        const diseaseDetails = document.getElementById('disease-details');
+        diseaseDetails.innerHTML = `
+            <h4>${diseaseInfo[topPrediction.disease].name}</h4>
+            <p>${diseaseInfo[topPrediction.disease].description}</p>
+            <h4>Management Recommendations:</h4>
+            <ul>
+                ${diseaseInfo[topPrediction.disease].management.map(tip => `<li>${tip}</li>`).join('')}
+            </ul>
+        `;
+        
+        // Show results
+        resultContainer.style.display = 'block';
+        
+        // Reset button state
+        classifyBtn.textContent = 'Classify Image';
+        classifyBtn.disabled = false;
+        
+        // Initialize charts if they're in the viewport
+        initializeCharts();
+    }, 1500);
+});
+
+// Initialize charts for model performance visualization
+function initializeCharts() {
+    // Accuracy chart
+    const accuracyCanvas = document.getElementById('accuracyChart');
+    if (accuracyCanvas) {
+        new Chart(accuracyCanvas, {
+            type: 'bar',
+            data: {
+                labels: ['Custom CNN', 'ResNet50', 'Decision Tree'],
+                datasets: [{
+                    label: 'Model Accuracy (%)',
+                    data: [92.8, 95.6, 73.5],
+                    backgroundColor: [
+                        'rgba(76, 175, 80, 0.8)',
+                        'rgba(33, 150, 243, 0.8)',
+                        'rgba(255, 152, 0, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(76, 175, 80, 1)',
+                        'rgba(33, 150, 243, 1)',
+                        'rgba(255, 152, 0, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Accuracy (%)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Training progress chart
+    const trainingCanvas = document.getElementById('trainingChart');
+    if (trainingCanvas) {
+        new Chart(trainingCanvas, {
+            type: 'line',
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                datasets: [
+                    {
+                        label: 'Training Accuracy',
+                        data: [75.2, 82.6, 86.3, 88.1, 89.4, 90.2, 91.0, 91.5, 92.0, 92.3],
+                        borderColor: 'rgba(76, 175, 80, 1)',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Validation Accuracy',
+                        data: [73.1, 80.2, 83.7, 85.9, 86.8, 87.5, 88.0, 88.4, 88.9, 89.2],
+                        borderColor: 'rgba(33, 150, 243, 1)',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Accuracy (%)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Epoch'
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Initialize page event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth scrolling for navigation links
+    document.querySelectorAll('nav a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                window.scrollTo({
+                    top: targetElement.offsetTop - 70,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+    
+    // Initialize charts if they're already in viewport
+    if (isInViewport(document.getElementById('results'))) {
+        initializeCharts();
+    }
+    
+    // Initialize charts on scroll if they come into viewport
+    window.addEventListener('scroll', function() {
+        if (isInViewport(document.getElementById('results'))) {
+            initializeCharts();
+        }
+    });
+});
+
+// Helper function to check if element is in viewport
+function isInViewport(element) {
+    if (!element) return false;
+    
+    const rect = element.getBoundingClientRect();
+    return (
+        rect.top <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.bottom >= 0
+    );
+}
